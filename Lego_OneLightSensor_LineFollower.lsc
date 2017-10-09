@@ -1,0 +1,37 @@
+program test {
+
+    #include <RCX2.h>
+    #include <RCX2MLT.h>
+    #include <RCX2Sounds.h>
+    #include <RCX2Def.h>
+
+    sensor light2 on 2
+    light2 is light as percent
+    event lBrite_light2EventHigh when light2.high
+    event lDark_light2EventLow when light2.low
+
+    main {
+        ext InterfaceType "kRoverBot"
+        rcx_ClearTimers
+        bbs_GlobalReset([A B C])
+
+        try {
+            power [ A C  ] 4
+            direction [ A C  ] [ ]
+        } retry on fail
+
+        try {
+            forever {
+                if light2 > lBrite_light2EventHigh.high {
+                    bb_TurnLeft(A, C, 10)
+                } else {
+                    if light2 < lDark_light2EventLow.low {
+                        bb_TurnLeft(A, C, 10)
+                    } else {
+                        bb_TurnRight(A, C, 10)
+                    }
+                }
+            }
+        } retry on fail
+    }
+}

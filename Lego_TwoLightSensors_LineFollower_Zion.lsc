@@ -1,0 +1,69 @@
+program test {
+
+    #include <RCX2.h>
+    #include <RCX2MLT.h>
+    #include <RCX2Sounds.h>
+    #include <RCX2Def.h>
+    sensor rotation2 on 2
+    rotation2 is rotation as angle
+    event less_rotation2EventLow when rotation2 < -1000
+
+    event less_rotation2EventLow0 when rotation2 < -1010
+
+    sensor light1 on 1
+    light1 is light as percent
+    event lDark_light1EventLow when light1.low
+
+
+    sensor light3 on 3
+    light3 is light as percent
+    event lDark_light3EventLow when light3.low
+
+
+
+    main {
+        ext InterfaceType "kRoverBot"
+        rcx_ClearTimers
+        bbs_GlobalReset([A B C])
+        start RotationWatcher0
+        rcx_Priority( 8)
+        trigger less_rotation2EventLow
+        try {
+            power [ A C  ] 8
+            direction [ A C  ] [ ]
+        } retry on fail
+        try {
+            forever {
+                if light1 < lDark_light1EventLow.low {
+                    direction [ C  ] [ A ]
+                    on [ A C  ]
+                }
+                else
+                {
+                    if light3 < lDark_light3EventLow.low {
+                        direction [ A  ] [ C ]
+                        on [ A C  ]
+                    }
+                    else
+                    {
+                        direction [ A C  ] [ ]
+                        on [ A C  ]
+                    }
+                }
+            }
+        } retry on fail
+    }
+
+
+    watcher RotationWatcher0 monitor less_rotation2EventLow
+    {
+        rcx_Priority( 5 )
+        try {
+            sound 1
+            repeat {
+                direction [ A C  ] [ ]
+                on [ A C  ]
+            } until less_rotation2EventLow0
+        } restart on fail
+    } restart on event
+}
